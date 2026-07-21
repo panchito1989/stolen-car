@@ -27,6 +27,19 @@ export function normalizeVin(input: string): string {
   return input.toUpperCase().replace(/[\s-]/g, '');
 }
 
+/**
+ * Filtro para el campo de captura en vivo: mayúsculas, solo caracteres
+ * válidos de VIN (sin I, O, Q) y máximo 17. A diferencia de `normalizeVin`,
+ * aquí sí descartamos caracteres inválidos en lugar de rechazar después,
+ * porque el usuario está tecleando de pie junto al vehículo.
+ */
+export function sanitizeVinInput(input: string): string {
+  return input
+    .toUpperCase()
+    .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+    .slice(0, 17);
+}
+
 // ---------------------------------------------------------------------------
 // Check digit ISO 3779 (módulo 11)
 // ---------------------------------------------------------------------------

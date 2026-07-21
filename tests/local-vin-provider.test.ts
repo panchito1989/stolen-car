@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   decodeWmi,
   normalizeVin,
+  sanitizeVinInput,
   validateVinCheckDigit,
 } from '@/lib/providers/vehicle/local-vin-provider';
 import { canTransition } from '@/types/shieldcar';
@@ -9,6 +10,26 @@ import { canTransition } from '@/types/shieldcar';
 describe('normalizeVin', () => {
   test('uppercases and strips spaces and hyphens', () => {
     expect(normalizeVin(' 1hg-cm82633a004352 ')).toBe('1HGCM82633A004352');
+  });
+});
+
+describe('sanitizeVinInput (filtro en vivo para el campo de captura)', () => {
+  test('uppercases as the user types', () => {
+    expect(sanitizeVinInput('3n1ab7')).toBe('3N1AB7');
+  });
+
+  test('drops forbidden VIN letters I, O, Q and other invalid chars', () => {
+    expect(sanitizeVinInput('3O1-IQ #ab!7ñ')).toBe('31AB7');
+  });
+
+  test('caps length at 17 characters', () => {
+    expect(sanitizeVinInput('11111111111111111999')).toBe(
+      '11111111111111111',
+    );
+  });
+
+  test('empty input stays empty', () => {
+    expect(sanitizeVinInput('')).toBe('');
   });
 });
 

@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+/*
+ * ShieldCar — tema "dictamen pericial".
+ * Papel cálido + tinta casi negra: máximo contraste para usarse de pie,
+ * a pleno sol, junto al vehículo. El único color fuerte es el semáforo.
+ */
+@theme inline {
+  --color-paper: #f4f0e6;
+  --color-card: #fdfbf5;
+  --color-ink: #1c1810;
+  --color-inkline: #2a2417;
+  --color-gris: #6d675a;
+
+  --color-verde: #0b6e38;
+  --color-verde-bg: #e4f2e8;
+  --color-ambar: #8a5f00;
+  --color-ambar-bg: #f9f0d8;
+  --color-rojo: #ad241c;
+  --color-rojo-bg: #f9e9e7;
+
+  --font-display: var(--font-condensed), 'Arial Narrow', sans-serif;
+  --font-sans: var(--font-body), sans-serif;
+  --font-mono: var(--font-plexmono), 'Courier New', monospace;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  /* Retícula tenue de papel técnico */
+  background-image:
+    linear-gradient(to right, rgba(28, 24, 16, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(28, 24, 16, 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Entrada de los sellos de veredicto */
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stamp-in {
+  animation: stamp-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+/* Sombra dura estilo documento sellado (sin desenfoque) */
+.hard-shadow {
+  box-shadow: 6px 6px 0 0 var(--color-ink);
+}
+
+.hard-shadow-sm {
+  box-shadow: 3px 3px 0 0 var(--color-ink);
+}

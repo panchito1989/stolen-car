@@ -14,11 +14,15 @@ import {
   BadgeCheck,
   CalendarRange,
   Factory,
+  FlaskConical,
   Globe2,
+  LoaderCircle,
   OctagonAlert,
   ScanBarcode,
+  ScanSearch,
   TriangleAlert,
 } from 'lucide-react';
+import VehicleReportCard from '@/components/VehicleReportCard';
 import {
   decodeWmi,
   sanitizeVinInput,
@@ -28,6 +32,16 @@ import type {
   VinCheckDigitResult,
   WmiDecodeResult,
 } from '@/lib/providers/vehicle/interface';
+import type { MockScenario } from '@/lib/providers/vehicle/mock-aggregator';
+import type { VehicleReport } from '@/lib/report/build-report';
+
+const SCENARIO_OPTIONS: { value: MockScenario; label: string }[] = [
+  { value: 'clean', label: 'Vehículo limpio' },
+  { value: 'stolen', label: 'Con reporte de robo' },
+  { value: 'debts', label: 'Con adeudos de tenencia' },
+  { value: 'fake_invoice', label: 'Factura falsa ante el SAT' },
+  { value: 'unavailable', label: 'Fuentes no disponibles' },
+];
 
 const REGION_LABELS: Record<WmiDecodeResult['region'], string> = {
   north_america: 'Norteamérica',
@@ -46,7 +60,12 @@ interface LiveVerdict {
 
 export default function VinInput() {
   const inputId = useId();
+  const scenarioId = useId();
   const [vin, setVin] = useState('');
+  const [scenario, setScenario] = useState<MockScenario>('clean');
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [report, setReport] = useState<VehicleReport | null>(null);
 
   const complete = vin.length === 17;
 
@@ -56,6 +75,45 @@ export default function VinInput() {
   }, [vin, complete]);
 
   const status = verdict?.check.verdict ?? 'idle';
+  // Solo se puede pedir reporte con un NIV bien formado (ok o warning).
+  const canFetch = status === 'ok' || status === 'warning';
+
+  function handleVinChange(value: string) {
+    setVin(sanitizeVinInput(value));
+    setReport(null);
+    setFetchError(null);
+  }
+
+  async function fetchReport() {
+    if (!canFetch || loading) return;
+    setLoading(true);
+    setFetchError(null);
+    setReport(null);
+    try {
+      const res = await fetch('/api/vehicle/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vin, scenario }),
+      });
+      const data: unknown = await res.json();
+      if (!res.ok) {
+        const message =
+          typeof data === 'object' && data !== null && 'error' in data
+            ? String((data as { error: unknown }).error)
+            : 'No se pudo generar el reporte.';
+        throw new Error(message);
+      }
+      setReport(data as VehicleReport);
+    } catch (error) {
+      setFetchError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo generar el reporte. Intenta de nuevo.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const inputBorder =
     status === 'ok'
@@ -84,8 +142,8 @@ export default function VinInput() {
         <input
           id={inputId}
           value={vin}
-          onChange={(e) => setVin(sanitizeVinInput(e.target.value))}
-          placeholder="3N1AB7AP5KY000000"
+          onChange={(e) => handleVinChange(e.target.value)}
+          placeholder="3N1AB7AP0KY000000"
           autoComplete="off"
           autoCapitalize="characters"
           autoCorrect="off"
@@ -136,6 +194,77 @@ export default function VinInput() {
           <FailCard key={vin} check={verdict.check} />
         )}
       </div>
+
+      {/* Paso 2: reporte completo (REPUVE, robo, adeudos, SAT) */}
+      {canFetch && (
+        <div className="stamp-in mt-6 border-t-2 border-dashed border-ink/30 pt-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display text-lg font-bold uppercase tracking-wide">
+              Paso 2 · Reporte completo
+            </h2>
+          </div>
+
+          {/* Selector de escenarios: solo para auditar la UI en demo */}
+          <label
+            htmlFor={scenarioId}
+            className="mt-3 flex items-center gap-1.5 font-display text-[0.7rem] font-bold uppercase tracking-[0.2em] text-gris"
+          >
+            <FlaskConical className="size-3.5" aria-hidden />
+            Escenario de prueba (demo)
+          </label>
+          <select
+            id={scenarioId}
+            value={scenario}
+            onChange={(e) => {
+              setScenario(e.target.value as MockScenario);
+              setReport(null);
+              setFetchError(null);
+            }}
+            disabled={loading}
+            className="hard-shadow-sm mt-1.5 w-full appearance-none border-2 border-ink bg-card px-3 py-2.5 text-sm font-medium"
+          >
+            {SCENARIO_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={fetchReport}
+            disabled={loading}
+            className="hard-shadow mt-4 flex w-full items-center justify-center gap-2 border-2 border-ink bg-ink px-4 py-4 font-display text-base font-bold uppercase tracking-wider text-paper transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-70"
+          >
+            {loading ? (
+              <>
+                <LoaderCircle className="size-5 animate-spin" aria-hidden />
+                Consultando REPUVE y SAT…
+              </>
+            ) : (
+              <>
+                <ScanSearch className="size-5" aria-hidden />
+                Consultar reporte completo
+              </>
+            )}
+          </button>
+
+          {fetchError && (
+            <p
+              role="alert"
+              className="mt-3 border-2 border-rojo bg-rojo-bg px-3 py-2 text-sm font-medium text-rojo"
+            >
+              {fetchError}
+            </p>
+          )}
+
+          {report && (
+            <div className="mt-5">
+              <VehicleReportCard report={report} />
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

@@ -58,3 +58,35 @@ body {
 .hard-shadow-sm {
   box-shadow: 3px 3px 0 0 var(--color-ink);
 }
+
+/* Visor pericial: línea de escaneo que barre el marco de apuntado */
+@keyframes scanline {
+  0% {
+    top: 4%;
+  }
+  50% {
+    top: 92%;
+  }
+  100% {
+    top: 4%;
+  }
+}
+
+.scanline {
+  animation: scanline 2s ease-in-out infinite;
+}
+
+/* Destello del veredicto de auditoría en vivo (verde/rojo) */
+@keyframes verdict-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.verdict-flash {
+  animation: verdict-flash 900ms ease-in-out 3;
+}

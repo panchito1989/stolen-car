@@ -13,6 +13,7 @@ import { useId, useMemo, useState } from 'react';
 import {
   BadgeCheck,
   CalendarRange,
+  Camera,
   Factory,
   FlaskConical,
   Globe2,
@@ -23,6 +24,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import VehicleReportCard from '@/components/VehicleReportCard';
+import VinCameraScanner from '@/components/vehicle/VinCameraScanner';
 import {
   decodeWmi,
   sanitizeVinInput,
@@ -66,6 +68,7 @@ export default function VinInput() {
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [report, setReport] = useState<VehicleReport | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const complete = vin.length === 17;
 
@@ -82,6 +85,15 @@ export default function VinInput() {
     setVin(sanitizeVinInput(value));
     setReport(null);
     setFetchError(null);
+  }
+
+  function handleScanned(scannedVin: string) {
+    // El escáner ya validó el dígito verificador; auto-completamos y el
+    // semáforo en vivo (useMemo sobre `vin`) reacciona solo.
+    setVin(sanitizeVinInput(scannedVin));
+    setReport(null);
+    setFetchError(null);
+    setScanning(false);
   }
 
   async function fetchReport() {
@@ -153,6 +165,23 @@ export default function VinInput() {
           className={`hard-shadow-sm w-full border-2 bg-card py-4 pl-13 pr-4 font-mono text-lg font-semibold uppercase tracking-[0.14em] placeholder:text-ink/25 focus:outline-2 focus:outline-offset-2 ${inputBorder}`}
         />
       </div>
+
+      {/* Escanear NIV con la cámara */}
+      <button
+        type="button"
+        onClick={() => setScanning(true)}
+        className="hard-shadow-sm mt-2 flex w-full items-center justify-center gap-2 border-2 border-ink bg-card px-4 py-3 font-display text-sm font-bold uppercase tracking-wider"
+      >
+        <Camera className="size-4" aria-hidden />
+        Escanear NIV con la cámara
+      </button>
+
+      {scanning && (
+        <VinCameraScanner
+          onDetected={handleScanned}
+          onClose={() => setScanning(false)}
+        />
+      )}
 
       {/* Progreso: 17 casillas; la 9.ª es el dígito verificador */}
       <div className="mt-3 flex items-center gap-3">

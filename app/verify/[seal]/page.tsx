@@ -14,6 +14,7 @@ import {
   ShieldX,
   TriangleAlert,
 } from 'lucide-react';
+import LiveVinAudit from '@/components/verify/LiveVinAudit';
 import { resolvePublicCertificate } from '@/lib/verify/mock-registry';
 import {
   sanitizeForPublicView,
@@ -39,7 +40,7 @@ export default async function VerifyPage({
   }
 
   const view = sanitizeForPublicView(certificate);
-  return <ValidScreen view={view} />;
+  return <ValidScreen view={view} seal={seal} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +92,13 @@ function BannerIcon({ verdict }: { verdict: Verdict }) {
   return <Icon className="size-14 shrink-0" strokeWidth={2.25} aria-hidden />;
 }
 
-function ValidScreen({ view }: { view: PublicCertificateView }) {
+function ValidScreen({
+  view,
+  seal,
+}: {
+  view: PublicCertificateView;
+  seal: string;
+}) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-paper px-4 pb-8 pt-5">
       {/* Membrete */}
@@ -135,6 +142,9 @@ function ValidScreen({ view }: { view: PublicCertificateView }) {
           coincidir con los del vehículo.
         </p>
       </section>
+
+      {/* Auditoría física en campo (escaneo en vivo vs. NIV real del server) */}
+      <LiveVinAudit seal={seal} />
 
       {/* Vendedor sanitizado */}
       <section className="mt-4 border-2 border-ink bg-card px-4 py-3">

@@ -115,6 +115,13 @@ export interface BuildReportOptions {
   delayMs?: number;
   /** Inyección de dependencias: cualquier adaptador del puerto sirve. */
   provider?: VehicleDataProvider;
+  /**
+   * Reloj fijo (ISO 8601) para timestamps del reporte. Sin esto, el reporte
+   * incrusta la hora real y su hash cambia en cada construcción; los flujos
+   * deterministas (demo/registro público) DEBEN pasarlo para que el sello sea
+   * reproducible entre rutas.
+   */
+  now?: string;
 }
 
 export async function buildReport(
@@ -123,7 +130,11 @@ export async function buildReport(
   const scenario = options.scenario ?? 'clean';
   const provider =
     options.provider ??
-    new MockVehicleProvider({ scenario, delayMs: options.delayMs });
+    new MockVehicleProvider({
+      scenario,
+      delayMs: options.delayMs,
+      now: options.now,
+    });
 
   // 1) Validación local primero: si el NIV ni siquiera tiene forma válida,
   //    no gastamos una sola consulta remota.
@@ -167,7 +178,7 @@ export async function buildReport(
   return {
     vin: check.vin,
     scenario,
-    generatedAt: new Date().toISOString(),
+    generatedAt: options.now ?? new Date().toISOString(),
     local: { check, wmi },
     checks,
     global: GLOBAL_LABELS[globalVerdict],

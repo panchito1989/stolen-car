@@ -30,6 +30,12 @@ export interface MockIdentityProviderOptions {
   scenario?: IdentityScenario;
   /** Latencia simulada. Default 300 ms; usar 0 en pruebas. */
   delayMs?: number;
+  /**
+   * Reloj fijo (ISO 8601) para `generatedAt` y el cálculo de vigencia. Los
+   * flujos deterministas (demo/registro público) lo pasan para que el
+   * dictamen hashee idéntico entre construcciones. Default: la hora real.
+   */
+  now?: string;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -59,14 +65,17 @@ export class MockIdentityProvider implements IdentityProvider {
 
   private readonly scenario: IdentityScenario;
   private readonly delayMs: number;
+  private readonly now: string | undefined;
 
   constructor(options: MockIdentityProviderOptions = {}) {
     this.scenario = options.scenario ?? 'valid_ine';
     this.delayMs = options.delayMs ?? 300;
+    this.now = options.now;
   }
 
   async verifyIdentity(_input: KycCaptureInput): Promise<KycReport> {
     await sleep(this.delayMs);
+    const clock = this.now ? new Date(this.now) : new Date();
 
     // 1) "OCR": la INE que el escenario dicta.
     const ine: IneData = { ...BASE_INE };
@@ -100,7 +109,7 @@ export class MockIdentityProvider implements IdentityProvider {
     const checks = {
       curpValid: validateCurp(ine.curp).valid,
       claveElectorValid: validateClaveElector(ine.claveElector).valid,
-      vigente: ine.vigencia >= new Date().getFullYear(),
+      vigente: ine.vigencia >= clock.getFullYear(),
       documentIntact,
       faceMatchScore: biometric.faceMatchScore,
       livenessPassed: biometric.livenessPassed,
@@ -110,7 +119,7 @@ export class MockIdentityProvider implements IdentityProvider {
 
     return {
       provider: this.name,
-      generatedAt: new Date().toISOString(),
+      generatedAt: clock.toISOString(),
       ine,
       biometric,
       checks,

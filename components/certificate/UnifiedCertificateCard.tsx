@@ -11,14 +11,13 @@
 import {
   BadgeCheck,
   Car,
-  Fingerprint,
   Lock,
   OctagonAlert,
-  QrCode,
   ShieldCheck,
   TriangleAlert,
   UserRound,
 } from 'lucide-react';
+import SealQrCode from '@/components/certificate/SealQrCode';
 import { maskVin, type UnifiedCertificate } from '@/lib/certificate/build-certificate';
 import {
   KYC_VERDICT_TO_SEMAPHORE,
@@ -160,13 +159,12 @@ export default function UnifiedCertificateCard({
       {/* Bloque de sellado forense */}
       <section className="border-t-2 border-ink bg-ink px-4 py-4 text-paper">
         <div className="flex items-center gap-4">
-          {/* Placeholder de QR de verificación pública */}
-          <div
-            className="grid size-20 shrink-0 place-items-center border-2 border-paper/40 bg-paper/5"
-            aria-label="Código QR de verificación (pendiente)"
-          >
-            <QrCode className="size-12 text-paper/70" strokeWidth={1.25} aria-hidden />
-          </div>
+          {/* QR de verificación pública (apunta a /verify/[seal]) */}
+          <SealQrCode
+            masterSealHash={masterSealHash}
+            size={80}
+            className="shrink-0 border-2 border-paper/40 bg-paper p-1"
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">

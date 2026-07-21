@@ -10,13 +10,9 @@
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import UnifiedCertificateCard from '@/components/certificate/UnifiedCertificateCard';
-import { buildUnifiedCertificate } from '@/lib/certificate/build-certificate';
-import {
-  MockIdentityProvider,
-  type IdentityScenario,
-} from '@/lib/identity/mock-provider';
+import type { IdentityScenario } from '@/lib/identity/mock-provider';
 import type { MockScenario } from '@/lib/providers/vehicle/mock-aggregator';
-import { buildReport } from '@/lib/report/build-report';
+import { getDemoCertificate } from '@/lib/verify/mock-registry';
 
 export const metadata = {
   title: 'ShieldCar — Certificado Unificado (demo)',
@@ -37,8 +33,6 @@ const IDENTITY_SCENARIOS: IdentityScenario[] = [
   'fake_document',
 ];
 
-const DEMO_VIN = '3N1AB7AP0KY000000';
-
 function pick<T extends string>(
   value: string | undefined,
   allowed: T[],
@@ -56,20 +50,9 @@ export default async function CertificateDemoPage({
   const vehicleScenario = pick(params.vehicle, VEHICLE_SCENARIOS, 'clean');
   const identityScenario = pick(params.identity, IDENTITY_SCENARIOS, 'valid_ine');
 
-  // Ambos dictámenes en memoria (sin red, sin base).
-  const vehicleReport = await buildReport({
-    vin: DEMO_VIN,
-    scenario: vehicleScenario,
-    delayMs: 0,
-  });
-  const kycReport = await new MockIdentityProvider({
-    scenario: identityScenario,
-    delayMs: 0,
-  }).verifyIdentity({ frontImage: 'demo', backImage: 'demo', selfieFrame: 'demo' });
-
-  // Sello fijo por combinación → la demo es estable al recargar.
-  const sealedAt = '2026-07-21T18:00:00.000Z';
-  const certificate = buildUnifiedCertificate(vehicleReport, kycReport, sealedAt);
+  // Certificado desde el registro compartido: la MISMA instancia (y por tanto
+  // el mismo sello) que resolverá /verify/[seal], así el QR funciona offline.
+  const certificate = await getDemoCertificate(vehicleScenario, identityScenario);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col px-4 pb-10 pt-6">

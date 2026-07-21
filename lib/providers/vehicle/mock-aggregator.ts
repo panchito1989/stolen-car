@@ -38,6 +38,12 @@ export interface MockVehicleProviderOptions {
   scenario?: MockScenario;
   /** Latencia simulada por consulta. Default 300 ms; usar 0 en pruebas. */
   delayMs?: number;
+  /**
+   * Reloj fijo (ISO 8601) para `checkedAt`. Se usa en flujos deterministas
+   * (demo/registro público) donde el resultado debe hashear idéntico sin
+   * importar cuándo se construya. Default: la hora real.
+   */
+  now?: string;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -51,10 +57,12 @@ export class MockVehicleProvider implements VehicleDataProvider {
 
   private readonly scenario: MockScenario;
   private readonly delayMs: number;
+  private readonly now: string | undefined;
 
   constructor(options: MockVehicleProviderOptions = {}) {
     this.scenario = options.scenario ?? 'clean';
     this.delayMs = options.delayMs ?? 300;
+    this.now = options.now;
   }
 
   // --- Métodos puros: delegan en la validación local, como todo adaptador ---
@@ -78,7 +86,7 @@ export class MockVehicleProvider implements VehicleDataProvider {
       ...partial,
       rawPayload,
       provider: this.name,
-      checkedAt: new Date().toISOString(),
+      checkedAt: this.now ?? new Date().toISOString(),
     };
   }
 

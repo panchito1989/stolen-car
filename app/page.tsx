@@ -1,4 +1,5 @@
-import { ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import VinInput from '@/components/VinInput';
 
 export default function Home() {
@@ -34,6 +35,17 @@ export default function Home() {
       <div className="mt-6">
         <VinInput />
       </div>
+
+      {/* Enlace al módulo de identidad (Fase 2) */}
+      <Link
+        href="/identidad"
+        className="hard-shadow-sm mt-8 flex items-center justify-between border-2 border-ink bg-card px-4 py-3"
+      >
+        <span className="font-display text-sm font-bold uppercase tracking-wide">
+          Fase 2 · Verificar identidad (KYC)
+        </span>
+        <ArrowRight className="size-5" aria-hidden />
+      </Link>
 
       {/* Pie del dictamen */}
       <footer className="mt-auto pt-10">

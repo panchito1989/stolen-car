@@ -10,6 +10,8 @@
  */
 
 import { NextResponse } from 'next/server';
+import { persistReport } from '@/lib/db/repository';
+import { getServerDb } from '@/lib/db/supabase-server';
 import { buildReport } from '@/lib/report/build-report';
 import type { MockScenario } from '@/lib/providers/vehicle/mock-aggregator';
 
@@ -61,7 +63,29 @@ export async function POST(request: Request) {
       scenario: scenario ?? 'clean',
       delayMs: 900,
     });
-    return NextResponse.json(report);
+
+    // Persistencia con resiliencia: sin Supabase configurado (o si falla),
+    // se advierte en consola y el reporte se devuelve igual — el desarrollo
+    // local offline nunca se rompe.
+    let persistence: { persisted: boolean; auditHash?: string } = {
+      persisted: false,
+    };
+    const db = getServerDb();
+    if (db) {
+      try {
+        const saved = await persistReport(db, report);
+        persistence = { persisted: true, auditHash: saved.auditHash };
+      } catch (persistError) {
+        console.warn(
+          '[ShieldCar] El reporte se generó pero no pudo persistirse:',
+          persistError instanceof Error
+            ? persistError.message
+            : persistError,
+        );
+      }
+    }
+
+    return NextResponse.json({ ...report, persistence });
   } catch (error) {
     // `buildReport` solo lanza por NIV inválido (error del cliente).
     return NextResponse.json(

@@ -14,6 +14,7 @@ import {
   BadgeCheck,
   CalendarRange,
   Camera,
+  Cpu,
   Factory,
   FlaskConical,
   Globe2,
@@ -25,6 +26,7 @@ import {
 } from 'lucide-react';
 import VehicleReportCard from '@/components/VehicleReportCard';
 import VinCameraScanner from '@/components/vehicle/VinCameraScanner';
+import ObdVinReader from '@/components/vehicle/ObdVinReader';
 import {
   decodeWmi,
   sanitizeVinInput,
@@ -69,6 +71,7 @@ export default function VinInput() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [report, setReport] = useState<VehicleReport | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [obdOpen, setObdOpen] = useState(false);
 
   const complete = vin.length === 17;
 
@@ -292,7 +295,31 @@ export default function VinInput() {
               <VehicleReportCard report={report} />
             </div>
           )}
+
+          {/* Paso 3 · Anti-clonación: NIV grabado en la computadora del auto */}
+          <div className="mt-6 border-t-2 border-dashed border-ink/30 pt-5">
+            <h2 className="font-display text-lg font-bold uppercase tracking-wide">
+              Paso 3 · Verificar contra la computadora
+            </h2>
+            <p className="mt-1 text-sm leading-snug text-gris">
+              A pie de auto: lee el NIV grabado de fábrica en la computadora
+              (ECU) por OBD-II y confírmalo contra los papeles. Es el candado
+              más fuerte contra autos clonados.
+            </p>
+            <button
+              type="button"
+              onClick={() => setObdOpen(true)}
+              className="hard-shadow-sm mt-3 flex w-full items-center justify-center gap-2 border-2 border-ink bg-card px-4 py-3 font-display text-sm font-bold uppercase tracking-wider"
+            >
+              <Cpu className="size-4" aria-hidden />
+              Leer NIV de la computadora (OBD-II)
+            </button>
+          </div>
         </div>
+      )}
+
+      {obdOpen && (
+        <ObdVinReader papersVin={vin} onClose={() => setObdOpen(false)} />
       )}
     </section>
   );
